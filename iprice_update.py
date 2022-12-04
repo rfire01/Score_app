@@ -57,5 +57,5 @@ def main(users, repeat_time=IPRICE_UPDATE_INTERVAL):
 
 
 if __name__ == '__main__':
-    users = ['kobig@bgu.ac.il', 'reshefm@ie.technion.ac.il', 'royfa@post.bgu.ac.il']
+    users = ['a']
     main(users)
