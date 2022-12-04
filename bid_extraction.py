@@ -7,11 +7,7 @@ import pandas as pd
 import dictdatabase as DDB
 
 from config import FORBIDDEN_CODE, BID_EXTRACTION_INTERVAL, DF_BACKUP_PATH, DF_BACKUP_INTERVAL
-from utils import create_headers
-
-
-class ForbiddenException(Exception):
-    pass
+from utils import create_headers, ForbiddenException
 
 
 def init_db():
