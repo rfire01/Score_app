@@ -4,27 +4,37 @@
     <meta charset="UTF-8">
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <script type="text/javascript">
-        google.charts.load("current", {packages:["corechart"]});
+        google.charts.load("current", {packages:['corechart']});
         google.charts.setOnLoadCallback(drawChart);
         function drawChart() {
             var data = google.visualization.arrayToDataTable([
+                ["Bid", "score", { role: "style" } ],
                 {% for key, value in data.items() %}
             {% if value is string %}
-            ['{{ key }}', '{{ value }}'],
+            ['{{ key }}', '{{ value }}', 'blue'],
             {% else %}
-            ['{{ key }}', {{ value }}],
+            ['{{ key }}', {{ value }}, 'blue'],
             {% endif %}
             {% endfor %}
-        ]);
+            ]);
+
+            var view = new google.visualization.DataView(data);
+            view.setColumns([0, 1,
+                { calc: "stringify",
+                    sourceColumn: 1,
+                    type: "string",
+                    role: "annotation" },
+                2]);
 
             var options = {
-                title: '',
-                is3D: true,
-                pieSliceText: 'value',
+                title: "",
+                width: 600,
+                height: 400,
+                bar: {groupWidth: "95%"},
+                legend: { position: "none" },
             };
-
-            var chart = new google.visualization.PieChart(document.getElementById('piechart_3d'));
-            chart.draw(data, options);
+            var chart = new google.visualization.ColumnChart(document.getElementById("columnchart_values"));
+            chart.draw(view, options);
         }
     </script>
 </head>
@@ -43,7 +53,7 @@
 {% if show_output %}
     {% if valid_user %}
         <label>You have {{score}}/{{requirement}} points</label>
-        <div id="piechart_3d" style="width: 900px; height: 500px; margin: 0 auto;"></div>
+        <div id="columnchart_values" style="width: 900px; height: 500px; margin: 0 auto;"></div>
     {% else %}
         <label>User does not exists</label>
     {% endif %}
