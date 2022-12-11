@@ -8,7 +8,7 @@ import pandas as pd
 import dictdatabase as DDB
 
 from config import FORBIDDEN_CODE, BID_EXTRACTION_INTERVAL, DF_BACKUP_PATH, DF_BACKUP_INTERVAL, \
-    SAVE_BIDS
+    SAVE_BIDS, Bids
 from utils import create_headers, ForbiddenException
 
 
@@ -35,10 +35,11 @@ def get_bids(headers):
     bid_table = pd.read_xml(resp.text, xpath='.//*').dropna(how='all', axis=1).assign(
         submissionId=lambda df: df.submissionId.ffill()).dropna(subset='email')
     # Filter bids that are not positive
-    bid_table = bid_table[bid_table.bid.str.slice(0,1).astype(int) > 2]
+    bid_table['bid'] = bid_table.bid.str.slice(0,1)
+    # bid_table = bid_table[bid_table.bid.str.slice(0,1).astype(int) > 2]
     bid_table['submissionId'] = bid_table.submissionId.astype(int)
     # Remove the text of the bid
-    del bid_table['bid']
+    # del bid_table['bid']
 
     return bid_table
 
@@ -58,12 +59,18 @@ def update_db(current_table, new_table):
     with DDB.at("users").session() as (user_session, users):
         with DDB.at("scores").session() as (score_session, scores):
             for email in emails:
-                user_bids = new_table[new_table.email == email]
-                papers = user_bids.submissionId.tolist()
-                users[email] = papers
-                scores[email] = sum(prices[str(paper)] for paper in papers)
+                user_bid_table = new_table[new_table.email == email]
+                user_bids = {}
+                user_score = {}
+                for bid_value in [Bids.PINCH.value, Bids.WILLING.value, Bids.EAGER.value]:
+                    papers = user_bid_table[user_bid_table.bid == bid_value].submissionId.tolist()
+                    user_bids[bid_value] = papers
+                    user_score[bid_value] = sum(prices[str(paper)] for paper in papers)
 
-                save_user_bid(email, papers)
+                users[email] = user_bids
+                scores[email] = user_score
+
+                save_user_bid(email, user_bids)
 
             user_session.write()
             score_session.write()
@@ -73,6 +80,7 @@ def update_db(current_table, new_table):
     with DDB.at("papers").session() as (session, papers):
         for paper_id in paper_ids:
             paper_bids = new_table[new_table.submissionId == paper_id]
+            paper_bids = paper_bids[paper_bids.bid >= Bids.PINCH.value]
             papers[str(paper_id)] = len(paper_bids.submissionId)
             session.write()
 

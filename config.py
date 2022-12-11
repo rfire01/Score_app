@@ -1,3 +1,5 @@
+from enum import Enum
+
 USERNAME = None
 PASSWORD = None
 
@@ -17,3 +19,8 @@ REQUIRED_POINTS = 2000
 
 SAVE_BIDS = False
 SAVE_IPRICES = False
+
+class Bids(Enum):
+    PINCH = '3'
+    WILLING = '4'
+    EAGER = '5'

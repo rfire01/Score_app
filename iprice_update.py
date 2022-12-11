@@ -29,6 +29,11 @@ def update_cmt_prices(users, price_requests, headers):
         raise ForbiddenException("Error with token, got status 403")
 
 
+def count_bidders():
+    users = DDB.at('users').read()
+    return sum(1 for user, bids in users.items() if sum(len(papers) for papers in bids.values()) > 0)
+
+
 def main(users, repeat_time=IPRICE_UPDATE_INTERVAL):
     headers = create_headers()
     init_prices(headers)
@@ -37,7 +42,7 @@ def main(users, repeat_time=IPRICE_UPDATE_INTERVAL):
     while True:
         price_requests = []
         paper_bids = DDB.at('papers').read()
-        bidded_users = len(DDB.at('users').read().keys())
+        bidded_users = count_bidders()
         with DDB.at("iprices").session() as (session, prices):
             for id in ids:
                 bids_on_paper = paper_bids.get(str(id), 0)
