@@ -1,12 +1,14 @@
 import os.path
 import time
+from datetime import datetime
 
 import requests as req
 
 import pandas as pd
 import dictdatabase as DDB
 
-from config import FORBIDDEN_CODE, BID_EXTRACTION_INTERVAL, DF_BACKUP_PATH, DF_BACKUP_INTERVAL
+from config import FORBIDDEN_CODE, BID_EXTRACTION_INTERVAL, DF_BACKUP_PATH, DF_BACKUP_INTERVAL, \
+    SAVE_BIDS
 from utils import create_headers, ForbiddenException
 
 
@@ -19,6 +21,9 @@ def init_db():
 
     if not DDB.at('scores').exists():
         DDB.at('scores').create({})
+
+    if not DDB.at('bids').exists():
+        DDB.at('bids').create({})
 
 
 def get_bids(headers):
@@ -38,11 +43,18 @@ def get_bids(headers):
     return bid_table
 
 
+def save_user_bid(user, bids):
+    if SAVE_BIDS:
+        update_time = datetime.now().strftime("%H%M%S-%d%m%Y")
+        DDB.at('user_bids', user, update_time).create(bids)
+
+
 def update_db(current_table, new_table):
     prices = DDB.at('iprices').read()
 
     diffs = pd.concat([current_table, new_table]).drop_duplicates(keep=False)
     emails = diffs.email.unique()
+    # update users current bids and scores
     with DDB.at("users").session() as (user_session, users):
         with DDB.at("scores").session() as (score_session, scores):
             for email in emails:
@@ -51,9 +63,12 @@ def update_db(current_table, new_table):
                 users[email] = papers
                 scores[email] = sum(prices[str(paper)] for paper in papers)
 
+                save_user_bid(email, papers)
+
             user_session.write()
             score_session.write()
 
+    # update how many bids each paper have
     paper_ids = diffs.submissionId.unique()
     with DDB.at("papers").session() as (session, papers):
         for paper_id in paper_ids:

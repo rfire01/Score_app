@@ -14,3 +14,6 @@ DF_BACKUP_INTERVAL = 60 * 60  # 1 Hours
 DF_BACKUP_PATH = 'bids_backup.pkl'
 
 REQUIRED_POINTS = 2000
+
+SAVE_BIDS = False
+SAVE_IPRICES = False
