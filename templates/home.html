@@ -45,17 +45,23 @@
 <h1>
     Please enter your CMT email address to see how many points you accumulated
 </h1>
+<h2>
+    Contact royfa@post.bgu.ac.il if you have any problems or questions.
+</h2>
 <form method="post">
     Email: <input name="email" value={% if email %}{{ email }}{% else %}{% endif %}>
     <br/><br/>
-    <button type="submit">Submit</button>
+    Password: <input type='password' name="password" value={% if password %}{{ password }}{% else %}{% endif %}>
+    <br/><br/>
+    <input type="submit" value='Submit', name='submit'></button>
+    <input type="submit" value='Send password', name='send'></button>
 </form>
 {% if show_output %}
     {% if valid_user %}
         <label>You have {{score}}/{{requirement}} points</label>
         <div id="columnchart_values" style="width: 900px; height: 500px; margin: 0 auto;"></div>
     {% else %}
-        <label>User does not exists</label>
+        <label>{{error_msg}}</label>
     {% endif %}
 {% else %}
 {% endif %}
