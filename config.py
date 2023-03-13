@@ -27,6 +27,9 @@ class Bids(Enum):
     WILLING = '4'
     EAGER = '5'
 
+LOW_DEMAND = 100
+MEDIUM_DEMAND = 40
+
 
 USERS = ['royfa@post.bgu.ac.il',
  'reshefm@ie.technion.ac.il',
