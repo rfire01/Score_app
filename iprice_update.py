@@ -8,7 +8,7 @@ from requests import ConnectionError
 
 import dictdatabase as DDB
 
-from Score_app.config import LOW_DEMAND, MEDIUM_DEMAND
+from config import LOW_DEMAND, MEDIUM_DEMAND
 from config import NUMBER_REVIEWERS, REQUIRED_BIDS, IPRICE_UPDATE_INTERVAL, FORBIDDEN_CODE, \
     SAVE_IPRICES, SERVICE_UNAVAILABLE, USERS
 from utils import create_headers, ForbiddenException, update_prices
@@ -60,6 +60,8 @@ def update_cmt_prices(users, price_requests, headers):
         resp = req.post(url, json=request, headers=headers)
     except:
         raise ForbiddenException("Error with token, got status 403")
+
+    #print(resp)
     #print(resp.text)
     # print(request)
     if resp.status_code == FORBIDDEN_CODE:
@@ -88,10 +90,10 @@ def calc_prices(price_users, demand_users, user_bids, demand, paper_id):
     #users_approved_paper = [1 if int(paper_id) in sum(user_bids.get(user,{}).values(), []) else 0 for user in users]
     price_calc = lambda x: int(100 * min(1, REQUIRED_BIDS / x))
     users_prices = [price_calc(demand - approved) for approved in users_approved_paper]
-    requests = [{'email': user, 'SubmissionId': paper_id, 'NumberField1': price}
+    requests = [{'Email': user, 'SubmissionId': paper_id, 'NumberField1': price, 'StringField1': price_to_demand(price)}
                       for price, user in zip(users_prices, price_users)]
-    requests += [{'email': user, 'SubmissionId': paper_id, 'NumberField2': price_to_demand(price)}
-                 for price, user in zip(users_prices, demand_users)]
+    #requests += [{'Email': user, 'SubmissionId': paper_id, 'NumberField2': price}# price_to_demand(price)}
+    #             for price, user in zip(users_prices, demand_users)]
     return requests, users_prices
 
 
@@ -117,7 +119,7 @@ def main(price_users, demand_users, repeat_time=IPRICE_UPDATE_INTERVAL):
                 #prices[id] = price
                 #price_requests.append({'email': '', 'SubmissionId': id, 'NumberField1': price})
                 #price_requests += create_requests(users, user_bids, demand, id)
-                project_requests, users_prices = calc_prices(price_users, user_bids, demand, id)
+                project_requests, users_prices = calc_prices(price_users, demand_users, user_bids, demand, id)
                 price_requests += project_requests
                 for price, user in zip(users_prices, price_users):
                     prices[user][id] = price
@@ -159,7 +161,7 @@ if __name__ == '__main__':
     #    raise e
     while True:
         try:
-            main(users)
+            main(users, users)
         except Exception as e:
             with open("iprice_out",'w') as f:
                 f.write(traceback.format_exc())

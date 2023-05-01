@@ -22,6 +22,11 @@ def add_access(email):
 
         session.write()
 
+
+def correct_email_format(email):
+    return ''.join(e.lower() for e in email if (e.isalnum() or e in ['.', '@']))
+
+
 def validate_user(email, password):
     if not DDB.at('accounts').exists():
         DDB.at('accounts').create({})
@@ -71,6 +76,7 @@ def home():
     data = {}
     if request.method == "POST":
         email = re.sub('[^A-Za-z0-9@.]+', '', request.form["email"])
+        email = correct_email_format(email)
         if 'send' in request.form:
             password = generate_password(email)
             if password:

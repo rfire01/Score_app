@@ -33,18 +33,24 @@ def create_headers():
     return headers
 
 
+def correct_email_format(email):
+    return ''.join(e.lower() for e in email if (e.isalnum() or e in ['.', '@']))
+
+
 def update_users(headers=None):
     if headers is None:
         headers = create_headers()
     url = 'https://cmt3.research.microsoft.com/api/odata/ECAITest2023/Users/ExportTabDelimited'
     resp = req.post(url, headers=headers)
     user_df = pd.read_csv(StringIO(resp.content.decode('utf-8')), sep='\t').iloc[:,3]
+    cleaned_users = [correct_email_format(user) for user in user_df]
     if not DDB.at('users').exists():
-        DDB.at('users').create({user: [] for user in user_df})
+        #cleaned_users = [correct_email_format(user) for user in user_df]
+        DDB.at('users').create({user: [] for user in cleaned_users})
     else:
         current_users =  DDB.at('users').read()
         with DDB.at("users").session() as (user_session, users):
-            for user in user_df:
+            for user in cleaned_users:
                 if user not in current_users:
                     users[user] = {bid_value: [] for bid_value in [Bids.PINCH.value, Bids.WILLING.value, Bids.EAGER.value]}
             user_session.write()
